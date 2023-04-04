@@ -22,9 +22,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover"/>
     <title>Record Picture</title>
     <!--========================================CSS=======================================================-->
-    {% block head1 %}
-
-    {% endblock %}
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/@fontsource/saira-extra-condensed@4.5.0/index.min.css"/>
     <link rel="stylesheet"
@@ -32,9 +29,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/devicons/devicon@v2.13.0/devicon.min.css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css"/>
     <link rel="stylesheet" href="../static/css/main.css"/>
-    {% block head %}
-
-    {% endblock %}
 
 </head>
 <body>
@@ -42,19 +36,35 @@
 
 <!--====================================1.设置侧边框===========================================================-->
 <aside id="sidebar" class="menu is-hidden-touch">
-    {% block aside %}
-
-    {% endblock %}
 </aside>
-{% block content %}
-
-{% endblock %}
+<div id="content">
+        <div id="fullpage">
+            <!--===========================展示所有照片=============================================-->
+            <div class="section hero is-fullheight page" id="anchor_1" style="padding: 1rem 3rem;">    <!--修改padding-->
+                <!--图片区域顶部-->
+                    <!--第一张浮窗图片-->
+                <div class="col-lg-3 col-md-6">
+                    <div class="featured-item pd-bottom-90">
+                        <div class="featured-item-meta">
+                            <div class="form-container">
+                                    <form method="post">
+                                        <input type="submit" name="submit_button" value="task_1">
+                                    </form>
+                            </div>
+                            <div class="thumbnail-container">
+                                    <img src="user_upload/task_1/scene_1.png" alt="Thumbnail">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 <!--hero脚本-->
 
 {% block javascript %}
 
-{% endblock %}
 
 </body>
 </html>
