@@ -12,8 +12,45 @@
     width: 100%;
     }
     .thumbnail-container img {
-        width: auto;
-        height: 500px;
+        width: 45%;
+        height: auto;
+    }
+    ul{
+        float: left;
+        list-style-type: none;
+        margin: 15px;
+    }
+    ul li{
+        display: inline-block;
+    }
+
+    ul li a{
+        text-decoration: none;
+        color: #c22e2e;
+        padding: 5px 20px;
+        border: 1px solid transparent;
+        transition: .6s ease;
+        border-radius: 20px;
+    }
+
+    ul li a:hover{
+        background-color: #864747;
+        color: #000;
+    }
+    ul li.active a{
+        background-color: #fb0404;
+        color: #000;
+    }
+    .title{
+        position: absolute;
+        top:50%;
+        left:50%;
+        transform: translate(-50%,-50%);
+    }
+    .title h1{
+        color: #fff;
+        font-size: 70px;
+        font-family: Century Gothic;
     }
 </style>
 <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
@@ -44,12 +81,16 @@
             <div class="col-lg-3 col-md-6">
                 <div class="featured-item pd-bottom-90">
                     <div class="featured-item-meta">
-                    <div class="thumbnail-container">
-    <img src="user_upload/task_1/scene_1.png" alt="Thumbnail">
-        <img src="user_upload/task_1/scene_2.png" alt="Thumbnail">
-        <img src="user_upload/task_1/scene_3.png" alt="Thumbnail">
-        <img src="user_upload/task_1/scene_4.png" alt="Thumbnail">
-        <img src="user_upload/task_1/scene_5.png" alt="Thumbnail">
+                    <ul>
+                                <li><a href="../../base.html" target="_blank">Back</a></li>
+                            </ul>
+                            <br />
+                        <div class="thumbnail-container">
+    <img src=scene_1.png alt="Thumbnail">
+        <img src=scene_2.png alt="Thumbnail">
+        <img src=scene_3.png alt="Thumbnail">
+        <img src=scene_4.png alt="Thumbnail">
+        <img src=scene_5.png alt="Thumbnail">
         </div>
     </div>
                     </div>
