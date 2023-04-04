@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block head1 %}
+{% endblock %}
+
+
+{% block aside %}
+{% endblock %}
+
+
+{% block content %}
+    <div id="content">
+        <div id="fullpage">
+            <!--===========================展示所有照片=============================================-->
+            <div class="section hero is-fullheight page" id="anchor_1" style="padding: 1rem 3rem;">    <!--修改padding-->
+                <!--图片区域顶部-->
+                {% for scene in scenes %}
+                    <!--第一张浮窗图片-->
+                    <div class="col-lg-3 col-md-6">
+                        <div class="featured-item pd-bottom-90">
+                            <div class="featured-item-meta">
+                                <div class="form-container">
+                                        <form method="post">
+                                            <input type="submit" name="submit_button" value={{scene.name}}>
+                                        </form>
+                                        <form  method="post"
+                                            action="{{ url_for("delete_scene",scene = scene.name) }}">
+                                            <input  type="submit" name="delete"
+                                                value="×"
+                                                onclick="return confirm('你确定要删除该场景吗?')">
+                                        </form>
+                                </div>
+                                <div class="thumbnail-container">
+                                    {% for picture in scene.pictures %}
+                                        <img src="{{ picture.picture_url}}" alt="Thumbnail">
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
