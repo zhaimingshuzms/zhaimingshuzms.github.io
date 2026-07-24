@@ -873,6 +873,7 @@ a {
 .contact-panel > div {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 28px;
     margin-top: 42px;
 }
