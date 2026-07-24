@@ -1,75 +1,90 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Konchok</title>
-    <!-- <link rel="stylesheet" type="text/css" href="css/style.css" /> -->
-    <style>
-        *{
-            padding: 0;
-            margin: 0;
-            font-family: "楷体";
-        }
-        header{
-            background-image:linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)), url(https://images.pexels.com/photos/1083822/pexels-photo-1083822.jpeg?cs=srgb&dl=pexels-lisa-1083822.jpg&fm=jpg);
-            height: 100vh;
-            background-size: cover;
-            background-position: center;
-        }
-    
-        ul{
-            float: right;
-            list-style-type: none;
-            margin: 15px;
-        }
-        ul li{
-            display: inline-block;
-        }
-    
-        ul li a{
-            text-decoration: none;
-            color: #fff;
-            padding: 5px 20px;
-            border: 1px solid transparent;
-            transition: .6s ease;
-            border-radius: 20px;
-        }
-    
-        ul li a:hover{
-            background-color: #fff;
-            color: #000;
-        }
-        ul li.active a{
-            background-color: #fff;
-            color: #000;
-        }
-        .title{
-            position: absolute;
-            top:50%;
-            left:50%;
-            transform: translate(-50%,-50%);
-        }
-        .title h1{
-            color: #fff;
-            font-size: 70px;
-            font-family: Century Gothic;
-        }
-    </style>
+    <meta name="description" content="翟明舒的个人主页，关注计算机视觉、多模态学习、智能体应用与 AI 系统。">
+    <meta name="theme-color" content="#070b17">
+    <title>翟明舒 · Mingshu Zhai</title>
+    <link rel="stylesheet" href="/assets/site.css">
+    <script src="/assets/globe.js" defer></script>
 </head>
-<body>
-    <header>
-        <div class="main">
-            <ul>
-                <li class="active"><a href="#">首页</a></li>
-                <li><a href="/CymNet/homepage.html" target="_blank">CymNet</a></li>
-                <li><a href="/browser/base.html" target="_blank">Scene</a></li>
-            </ul>
-        </div>
-        <div class="title">
-            <h1><span style="color: crimson;">My</span> Homepage</h1>
-        </div>
+<body class="home-page">
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+
+    <header class="site-header">
+        <a class="brand" href="/" aria-label="回到首页">
+            <span class="brand-mark">MZ</span>
+            <span class="brand-name">Mingshu Zhai</span>
+        </a>
+        <nav class="site-nav" aria-label="主导航">
+            <a class="active" href="/">Home</a>
+            <a href="/about/">About Me</a>
+            <a href="/CymNet/homepage.html" target="_blank" rel="noopener">CymNet</a>
+            <a href="/browser/base.html" target="_blank" rel="noopener">Scene</a>
+        </nav>
     </header>
+
+    <main class="home-main">
+        <section class="hero-copy" aria-labelledby="hero-title">
+            <p class="eyebrow"><span></span>Hello, I’m</p>
+            <h1 id="hero-title">
+                <span class="name-cn">翟明舒</span>
+                <span class="name-en">Mingshu Zhai</span>
+            </h1>
+            <p class="hero-lead">
+                探索模型、智能体与真实世界的交汇处，
+                <span>让想法从研究走向可运行的系统。</span>
+            </p>
+            <p class="hero-description">
+                关注计算机视觉、多模态学习、Agent 应用设计、仿真与高效模型微调。
+                我喜欢把复杂问题拆解成清晰结构，再用代码构建出来。
+            </p>
+            <div class="topic-row" aria-label="研究兴趣">
+                <span>Computer Vision</span>
+                <span>Multimodal AI</span>
+                <span>Agent Systems</span>
+            </div>
+            <div class="hero-actions">
+                <a class="button button-primary" href="/about/">
+                    About Me
+                    <span aria-hidden="true">↗</span>
+                </a>
+                <a class="button button-secondary" href="https://github.com/zhaimingshuzms" target="_blank" rel="noopener">
+                    GitHub
+                    <span aria-hidden="true">⌁</span>
+                </a>
+            </div>
+        </section>
+
+        <section class="globe-stage" aria-label="交互式三维地球">
+            <div class="globe-orbit orbit-one" aria-hidden="true"></div>
+            <div class="globe-orbit orbit-two" aria-hidden="true"></div>
+            <div class="globe-shell">
+                <canvas
+                    id="globe"
+                    class="globe-canvas"
+                    tabindex="0"
+                    role="img"
+                    aria-label="可拖动旋转的三维地球。使用鼠标或触摸拖动，也可使用方向键旋转。"
+                ></canvas>
+                <div class="globe-fallback" aria-hidden="true"></div>
+            </div>
+            <div class="globe-hint">
+                <span class="drag-icon" aria-hidden="true">↔</span>
+                Drag to rotate
+            </div>
+            <div class="coordinate-card" aria-hidden="true">
+                <span>HOME BASE</span>
+                <strong>HANGZHOU · 30.3°N</strong>
+            </div>
+        </section>
+    </main>
+
+    <footer class="home-footer">
+        <p>Based in Hangzhou · Exploring intelligent systems</p>
+        <a href="mailto:zhaimingshuzms@outlook.com">zhaimingshuzms@outlook.com</a>
+    </footer>
 </body>
 </html>
