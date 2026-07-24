@@ -22,51 +22,11 @@
     const deg = Math.PI / 180;
     const hangzhou = { lon: 120.15, lat: 30.27 };
 
-    // Coarse geographic outlines are sampled into a point cloud. The globe is
-    // rendered through a real spherical projection, so every point rotates in 3D.
-    const continentPolygons = [
-        [[-168,70],[-150,59],[-135,54],[-130,43],[-118,31],[-104,24],[-97,17],[-83,23],[-80,32],[-67,45],[-55,51],[-66,60],[-95,72],[-125,72]],
-        [[-82,12],[-73,8],[-67,-3],[-60,-9],[-53,-20],[-48,-30],[-55,-43],[-66,-55],[-73,-43],[-77,-20]],
-        [[-52,82],[-28,75],[-18,64],[-40,58],[-58,66]],
-        [[-11,36],[-4,44],[8,51],[25,60],[48,65],[75,72],[118,67],[146,56],[166,55],[180,48],[164,37],[141,34],[122,23],[105,10],[90,9],[77,22],[62,25],[48,37],[31,36],[19,43],[7,36]],
-        [[-18,34],[6,37],[27,33],[40,15],[51,11],[43,-12],[34,-28],[19,-35],[7,-30],[-5,-5],[-16,14]],
-        [[68,24],[77,31],[89,26],[87,10],[78,7],[72,15]],
-        [[112,-12],[131,-10],[151,-22],[153,-37],[135,-44],[116,-33]],
-        [[47,-13],[51,-15],[50,-26],[44,-24]],
-        [[129,34],[142,46],[146,42],[139,33]],
-        [[-180,-74],[-120,-70],[-60,-73],[0,-69],[60,-72],[120,-69],[180,-74],[180,-89],[-180,-89]]
-    ];
-
-    function pointInPolygon(lon, lat, polygon) {
-        let inside = false;
-        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-            const xi = polygon[i][0];
-            const yi = polygon[i][1];
-            const xj = polygon[j][0];
-            const yj = polygon[j][1];
-            const crosses = ((yi > lat) !== (yj > lat))
-                && (lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi);
-            if (crosses) inside = !inside;
-        }
-        return inside;
-    }
-
-    function seededNoise(a, b) {
-        const value = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453;
-        return value - Math.floor(value);
-    }
-
-    const landPoints = [];
-    for (let lat = -87; lat <= 84; lat += 2.65) {
-        for (let lon = -178; lon <= 178; lon += 2.65) {
-            const onLand = continentPolygons.some((polygon) => pointInPolygon(lon, lat, polygon));
-            if (!onLand || seededNoise(lon, lat) < 0.16) continue;
-            landPoints.push({
-                lon: lon + (seededNoise(lat, lon) - 0.5) * 1.2,
-                lat: lat + (seededNoise(lon + 9, lat - 4) - 0.5) * 1.2
-            });
-        }
-    }
+    // Generated from Natural Earth 1:110m data. The point cloud and coastline
+    // are projected onto a sphere at render time, so they rotate as true 3D data.
+    const landData = window.__GLOBE_LAND_DATA__ || { points: [], rings: [] };
+    const landPoints = landData.points;
+    const landRings = landData.rings;
 
     function project(lon, lat, radius, centerX, centerY) {
         const lambda = lon * deg + state.longitude;
@@ -167,16 +127,29 @@
     }
 
     function drawLand(centerX, centerY, radius) {
-        landPoints.forEach((point) => {
-            const projected = project(point.lon, point.lat, radius, centerX, centerY);
+        landPoints.forEach(([lon, lat]) => {
+            const projected = project(lon, lat, radius, centerX, centerY);
             if (projected.z <= 0) return;
 
             const visibility = Math.min(1, projected.z * 2.3);
-            const dotRadius = Math.max(0.45, radius * 0.0044 * (0.55 + projected.z * 0.55));
+            const dotRadius = Math.max(0.38, radius * 0.0036 * (0.55 + projected.z * 0.55));
             context.beginPath();
             context.arc(projected.x, projected.y, dotRadius, 0, Math.PI * 2);
             context.fillStyle = `rgba(112, 255, 218, ${0.2 + visibility * 0.64})`;
             context.fill();
+        });
+    }
+
+    function drawCoastlines(centerX, centerY, radius) {
+        landRings.forEach((ring) => {
+            drawProjectedLine(
+                ring,
+                radius,
+                centerX,
+                centerY,
+                "rgba(126, 255, 224, .34)",
+                0.72
+            );
         });
     }
 
@@ -239,6 +212,7 @@
         drawSphere(centerX, centerY, radius);
         drawGraticule(centerX, centerY, radius);
         drawLand(centerX, centerY, radius);
+        drawCoastlines(centerX, centerY, radius);
         drawHomeMarker(centerX, centerY, radius, time);
 
         const delta = Math.min(32, time - state.lastTime);
