@@ -1,0 +1,310 @@
+(() => {
+    const canvas = document.getElementById("globe");
+    if (!canvas) return;
+
+    const context = canvas.getContext("2d", { alpha: true });
+    if (!context) return;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const state = {
+        longitude: -1.8,
+        latitude: -0.25,
+        velocityX: 0,
+        velocityY: 0,
+        dragging: false,
+        pointerX: 0,
+        pointerY: 0,
+        size: 0,
+        dpr: 1,
+        lastTime: performance.now()
+    };
+
+    const deg = Math.PI / 180;
+    const hangzhou = { lon: 120.15, lat: 30.27 };
+
+    // Coarse geographic outlines are sampled into a point cloud. The globe is
+    // rendered through a real spherical projection, so every point rotates in 3D.
+    const continentPolygons = [
+        [[-168,70],[-150,59],[-135,54],[-130,43],[-118,31],[-104,24],[-97,17],[-83,23],[-80,32],[-67,45],[-55,51],[-66,60],[-95,72],[-125,72]],
+        [[-82,12],[-73,8],[-67,-3],[-60,-9],[-53,-20],[-48,-30],[-55,-43],[-66,-55],[-73,-43],[-77,-20]],
+        [[-52,82],[-28,75],[-18,64],[-40,58],[-58,66]],
+        [[-11,36],[-4,44],[8,51],[25,60],[48,65],[75,72],[118,67],[146,56],[166,55],[180,48],[164,37],[141,34],[122,23],[105,10],[90,9],[77,22],[62,25],[48,37],[31,36],[19,43],[7,36]],
+        [[-18,34],[6,37],[27,33],[40,15],[51,11],[43,-12],[34,-28],[19,-35],[7,-30],[-5,-5],[-16,14]],
+        [[68,24],[77,31],[89,26],[87,10],[78,7],[72,15]],
+        [[112,-12],[131,-10],[151,-22],[153,-37],[135,-44],[116,-33]],
+        [[47,-13],[51,-15],[50,-26],[44,-24]],
+        [[129,34],[142,46],[146,42],[139,33]],
+        [[-180,-74],[-120,-70],[-60,-73],[0,-69],[60,-72],[120,-69],[180,-74],[180,-89],[-180,-89]]
+    ];
+
+    function pointInPolygon(lon, lat, polygon) {
+        let inside = false;
+        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+            const xi = polygon[i][0];
+            const yi = polygon[i][1];
+            const xj = polygon[j][0];
+            const yj = polygon[j][1];
+            const crosses = ((yi > lat) !== (yj > lat))
+                && (lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi);
+            if (crosses) inside = !inside;
+        }
+        return inside;
+    }
+
+    function seededNoise(a, b) {
+        const value = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453;
+        return value - Math.floor(value);
+    }
+
+    const landPoints = [];
+    for (let lat = -87; lat <= 84; lat += 2.65) {
+        for (let lon = -178; lon <= 178; lon += 2.65) {
+            const onLand = continentPolygons.some((polygon) => pointInPolygon(lon, lat, polygon));
+            if (!onLand || seededNoise(lon, lat) < 0.16) continue;
+            landPoints.push({
+                lon: lon + (seededNoise(lat, lon) - 0.5) * 1.2,
+                lat: lat + (seededNoise(lon + 9, lat - 4) - 0.5) * 1.2
+            });
+        }
+    }
+
+    function project(lon, lat, radius, centerX, centerY) {
+        const lambda = lon * deg + state.longitude;
+        const phi = lat * deg;
+        const cosPhi = Math.cos(phi);
+        const x = cosPhi * Math.sin(lambda);
+        const rawY = Math.sin(phi);
+        const rawZ = cosPhi * Math.cos(lambda);
+
+        const cosTilt = Math.cos(state.latitude);
+        const sinTilt = Math.sin(state.latitude);
+        const y = rawY * cosTilt - rawZ * sinTilt;
+        const z = rawY * sinTilt + rawZ * cosTilt;
+
+        return {
+            x: centerX + x * radius,
+            y: centerY - y * radius,
+            z
+        };
+    }
+
+    function drawSphere(centerX, centerY, radius) {
+        const ocean = context.createRadialGradient(
+            centerX - radius * 0.38,
+            centerY - radius * 0.43,
+            radius * 0.05,
+            centerX,
+            centerY,
+            radius
+        );
+        ocean.addColorStop(0, "#235b91");
+        ocean.addColorStop(0.28, "#123b6d");
+        ocean.addColorStop(0.72, "#091c3e");
+        ocean.addColorStop(1, "#030714");
+
+        context.save();
+        context.beginPath();
+        context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        context.fillStyle = ocean;
+        context.fill();
+        context.clip();
+
+        const glow = context.createLinearGradient(centerX - radius, centerY, centerX + radius, centerY);
+        glow.addColorStop(0, "rgba(0, 0, 0, .54)");
+        glow.addColorStop(0.33, "rgba(62, 206, 255, .04)");
+        glow.addColorStop(0.7, "rgba(80, 118, 240, .06)");
+        glow.addColorStop(1, "rgba(0, 0, 0, .72)");
+        context.fillStyle = glow;
+        context.fillRect(centerX - radius, centerY - radius, radius * 2, radius * 2);
+        context.restore();
+
+        context.beginPath();
+        context.arc(centerX, centerY, radius + 1, 0, Math.PI * 2);
+        context.strokeStyle = "rgba(103, 224, 255, .42)";
+        context.lineWidth = 1;
+        context.stroke();
+
+        context.beginPath();
+        context.arc(centerX, centerY, radius + 5, 0, Math.PI * 2);
+        context.strokeStyle = "rgba(70, 170, 255, .10)";
+        context.lineWidth = 10;
+        context.stroke();
+    }
+
+    function drawProjectedLine(points, radius, centerX, centerY, color, lineWidth) {
+        context.beginPath();
+        let drawing = false;
+        points.forEach(([lon, lat]) => {
+            const projected = project(lon, lat, radius, centerX, centerY);
+            if (projected.z <= 0.012) {
+                drawing = false;
+                return;
+            }
+            if (!drawing) {
+                context.moveTo(projected.x, projected.y);
+                drawing = true;
+            } else {
+                context.lineTo(projected.x, projected.y);
+            }
+        });
+        context.strokeStyle = color;
+        context.lineWidth = lineWidth;
+        context.stroke();
+    }
+
+    function drawGraticule(centerX, centerY, radius) {
+        for (let lon = -180; lon < 180; lon += 30) {
+            const points = [];
+            for (let lat = -88; lat <= 88; lat += 2) points.push([lon, lat]);
+            drawProjectedLine(points, radius, centerX, centerY, "rgba(110, 207, 255, .10)", 0.7);
+        }
+
+        for (let lat = -60; lat <= 60; lat += 30) {
+            const points = [];
+            for (let lon = -180; lon <= 180; lon += 2) points.push([lon, lat]);
+            drawProjectedLine(points, radius, centerX, centerY, "rgba(110, 207, 255, .10)", 0.7);
+        }
+    }
+
+    function drawLand(centerX, centerY, radius) {
+        landPoints.forEach((point) => {
+            const projected = project(point.lon, point.lat, radius, centerX, centerY);
+            if (projected.z <= 0) return;
+
+            const visibility = Math.min(1, projected.z * 2.3);
+            const dotRadius = Math.max(0.45, radius * 0.0044 * (0.55 + projected.z * 0.55));
+            context.beginPath();
+            context.arc(projected.x, projected.y, dotRadius, 0, Math.PI * 2);
+            context.fillStyle = `rgba(112, 255, 218, ${0.2 + visibility * 0.64})`;
+            context.fill();
+        });
+    }
+
+    function drawHomeMarker(centerX, centerY, radius, time) {
+        const projected = project(hangzhou.lon, hangzhou.lat, radius, centerX, centerY);
+        if (projected.z < 0.08) return;
+
+        const pulse = 5 + (Math.sin(time * 0.003) + 1) * 4;
+        context.beginPath();
+        context.arc(projected.x, projected.y, pulse, 0, Math.PI * 2);
+        context.strokeStyle = `rgba(255, 255, 255, ${0.46 - pulse * 0.02})`;
+        context.lineWidth = 1;
+        context.stroke();
+
+        context.beginPath();
+        context.arc(projected.x, projected.y, 2.7, 0, Math.PI * 2);
+        context.fillStyle = "#ffffff";
+        context.shadowColor = "#6fffd9";
+        context.shadowBlur = 13;
+        context.fill();
+        context.shadowBlur = 0;
+    }
+
+    function drawAtmosphere(centerX, centerY, radius) {
+        const atmosphere = context.createRadialGradient(
+            centerX,
+            centerY,
+            radius * 0.82,
+            centerX,
+            centerY,
+            radius * 1.18
+        );
+        atmosphere.addColorStop(0, "rgba(65, 197, 255, 0)");
+        atmosphere.addColorStop(.7, "rgba(65, 197, 255, .08)");
+        atmosphere.addColorStop(1, "rgba(65, 197, 255, 0)");
+        context.beginPath();
+        context.arc(centerX, centerY, radius * 1.18, 0, Math.PI * 2);
+        context.fillStyle = atmosphere;
+        context.fill();
+    }
+
+    function resize() {
+        const rect = canvas.getBoundingClientRect();
+        state.dpr = Math.min(window.devicePixelRatio || 1, 2);
+        state.size = Math.max(1, Math.min(rect.width, rect.height));
+        canvas.width = Math.round(rect.width * state.dpr);
+        canvas.height = Math.round(rect.height * state.dpr);
+        context.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+    }
+
+    function render(time) {
+        const width = canvas.width / state.dpr;
+        const height = canvas.height / state.dpr;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = Math.min(width, height) * 0.365;
+
+        context.clearRect(0, 0, width, height);
+        drawAtmosphere(centerX, centerY, radius);
+        drawSphere(centerX, centerY, radius);
+        drawGraticule(centerX, centerY, radius);
+        drawLand(centerX, centerY, radius);
+        drawHomeMarker(centerX, centerY, radius, time);
+
+        const delta = Math.min(32, time - state.lastTime);
+        state.lastTime = time;
+
+        if (!state.dragging) {
+            state.longitude += state.velocityX * delta;
+            state.latitude += state.velocityY * delta;
+            state.velocityX *= 0.955;
+            state.velocityY *= 0.93;
+
+            if (!reducedMotion && Math.abs(state.velocityX) < 0.00005) {
+                state.longitude += 0.000075 * delta;
+            }
+        }
+
+        state.latitude = Math.max(-0.95, Math.min(0.95, state.latitude));
+        requestAnimationFrame(render);
+    }
+
+    canvas.addEventListener("pointerdown", (event) => {
+        state.dragging = true;
+        state.pointerX = event.clientX;
+        state.pointerY = event.clientY;
+        state.velocityX = 0;
+        state.velocityY = 0;
+        canvas.setPointerCapture(event.pointerId);
+    });
+
+    canvas.addEventListener("pointermove", (event) => {
+        if (!state.dragging) return;
+        const deltaX = event.clientX - state.pointerX;
+        const deltaY = event.clientY - state.pointerY;
+        state.longitude += deltaX * 0.007;
+        state.latitude -= deltaY * 0.006;
+        state.velocityX = deltaX * 0.00028;
+        state.velocityY = -deltaY * 0.00022;
+        state.pointerX = event.clientX;
+        state.pointerY = event.clientY;
+    });
+
+    function releasePointer(event) {
+        state.dragging = false;
+        if (canvas.hasPointerCapture(event.pointerId)) {
+            canvas.releasePointerCapture(event.pointerId);
+        }
+    }
+
+    canvas.addEventListener("pointerup", releasePointer);
+    canvas.addEventListener("pointercancel", releasePointer);
+
+    canvas.addEventListener("keydown", (event) => {
+        const keyMap = {
+            ArrowLeft: [0.12, 0],
+            ArrowRight: [-0.12, 0],
+            ArrowUp: [0, 0.1],
+            ArrowDown: [0, -0.1]
+        };
+        if (!keyMap[event.key]) return;
+        event.preventDefault();
+        state.longitude += keyMap[event.key][0];
+        state.latitude += keyMap[event.key][1];
+    });
+
+    const resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(canvas);
+    resize();
+    requestAnimationFrame(render);
+})();
